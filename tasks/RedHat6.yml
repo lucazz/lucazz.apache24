@@ -1,0 +1,105 @@
+---
+- name: Installing dependencies apache24 package
+  yum: name={{ item }} state=latest
+  with_items:
+    - autoconf
+    - pcre-devel
+    - openldap-devel
+    - lua-devel
+    - libxml2-devel
+    - libselinux-devel
+    - openssl-devel
+    - libuuid-devel
+    - rpm-build
+    - sqlite-devel
+    - mysql-devel
+    - postgresql-devel
+    - db4-devel
+    - expat-devel
+    - nss-devel
+    - unixODBC-devel
+    - gnutls
+    - mailcap
+    - libtool
+    - doxygen
+
+- name: Creating Build RPM file structure
+  file: path=/root/rpmbuild/{{ item }} state=directory
+  with_items:
+    - SOURCES
+    - SPECS
+    - BUILD
+    - RPMS
+    - SRPMS
+
+- name: Installing freetds and freetds-devel
+  yum: name={{ item }} state=present
+  with_items:
+    - http://pkgs.repoforge.org/freetds/freetds-0.91-1.el6.rf.x86_64.rpm
+    - http://pkgs.repoforge.org/freetds/freetds-devel-0.91-1.el6.rf.x86_64.rpm
+
+- name: Downloading httpd sources
+  get_url:
+    force: yes
+    url: http://www.us.apache.org/dist/httpd/httpd-2.4.17.tar.bz2
+    dest: /root/rpmbuild/SOURCES/httpd-2.4.17.tar.bz2
+
+- name: Downloading apr sources
+  get_url:
+    url: "{{ item }}"
+    dest: /root/rpmbuild/SOURCES/
+  with_items:
+    - http://mirror.nbtelecom.com.br/apache/apr/apr-1.5.2.tar.bz2
+    - http://mirror.nbtelecom.com.br/apache/apr/apr-util-1.5.4.tar.bz2
+
+- name: Downloading distcache sources
+  get_url:
+    url: http://nbtelecom.dl.sourceforge.net/project/distcache/1.%20distcache-devel/1.5.1/distcache-1.5.1.tar.bz2
+    dest: /root/rpmbuild/SOURCES/distcache-1.5.1.tar.bz2
+
+- name: Building apr and apr-devel
+  action: command chdir=/root/rpmbuild/SOURCES/ rpmbuild -tb apr-1.5.2.tar.bz2
+
+- name: Installing apr
+  yum: name=/root/rpmbuild/RPMS/x86_64/apr-1.5.2-1.x86_64.rpm state=present
+
+- name: Installing  apr-devel
+  yum: name=/root/rpmbuild/RPMS/x86_64/apr-devel-1.5.2-1.x86_64.rpm state=present
+
+
+- name: Building apr-util and apr-util-devel
+  action: command chdir=/root/rpmbuild/SOURCES/ rpmbuild -tb apr-util-1.5.4.tar.bz2
+
+- name: Installing apr-util and apr-util-devel
+  yum: name="{{ item }}" state=present
+  with_items:
+    - /root/rpmbuild/RPMS/x86_64/apr-util-1.5.4-1.x86_64.rpm
+    - /root/rpmbuild/RPMS/x86_64/apr-util-devel-1.5.4-1.x86_64.rpm
+
+- name: Installing distcache and distcache-devel
+  yum: name={{ item }} state=present
+  with_items:
+    - ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/zantekk:/Server-HTTPD24/RedHat_RHEL-6/x86_64/distcache-1.4.5-8.3.x86_64.rpm
+    - ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/zantekk:/Server-HTTPD24/RedHat_RHEL-6/x86_64/distcache-devel-1.4.5-8.3.x86_64.rpm
+
+- name: Building apache24
+  action: command chdir=/root/rpmbuild/SOURCES/ rpmbuild -tb httpd-2.4.17.tar.bz2
+
+- name: Installing apr-util and apr-util-devel
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - /root/rpmbuild/RPMS/x86_64/httpd-2.4.17-1.x86_64.rpm
+  notify:
+    - start httpd
+
+- name: Configuring apache24 package
+  template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart httpd

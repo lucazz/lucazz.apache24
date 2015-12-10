@@ -1,0 +1,17 @@
+---
+- name: Installing apache24
+  yum: name={{ item }} state=present
+  with_items:
+    - httpd
+  notify:
+    - start httpd
+
+- name: Configuring apache24 package
+  template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart httpd

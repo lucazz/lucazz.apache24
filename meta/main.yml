@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: Lucas do Amaral Saboya
+  description: Role for installing apache 2.4
+  company: Intuitive Reason
+  license: BSD license
+  min_ansible_version: 1.9+
+  platforms:
+  - name: EL
+    versions:
+    - 6
+    - 7
+  - name: Ubuntu
+    versions:
+    - trusty
+  categories:
+  - system
+dependencies: []
